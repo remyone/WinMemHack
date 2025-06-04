@@ -11,5 +11,5 @@
 ## Usage 🚀
 **./main.exe ProcessName.exe Address New_Value**. For example:
 ```bash
-./MemoryEditor.exe game.exe 0xABCDEF42 1337
+./main.exe game.exe 0xABCDEF42 1337
 ```
