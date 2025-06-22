@@ -10,7 +10,7 @@
 - **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`
 
 ## Usage 🚀
-**./main.exe ProcessName.exe Address New_Value**. For example:
+**./main.exe ProcessName.exe**. For example:
 ```bash
-./MEU.exe game.exe 0xABCDEF42 1337
+./MEU.exe game.exe
 ```
