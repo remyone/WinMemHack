@@ -7,10 +7,9 @@
 - **Process verification** with executable path display
 - **Colorized terminal output** for better visibility
 - **Error handling** with detailed WinAPI error codes
-- **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`
+- **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`. Also there is multi threading
 
 ## Usage 🚀
-**./main.exe ProcessName.exe**. For example:
 ```bash
-./MEU.exe game.exe
+./MEU.exe ProcessName.exe
 ```
