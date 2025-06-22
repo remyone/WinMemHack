@@ -1,12 +1,11 @@
-#include <stdio.h>
+#include "functions.h"
 #include <stdlib.h>
 #include <stdint.h>
-#include <Windows.h>
 #include <psapi.h>
 #include <tlhelp32.h>
 #include <string.h>
 #include <memoryapi.h>
-#include <winnt.h>
+#include <process.h>
 
 #define DT "\x1b[0m"
 #define RED "\x1b[31m"
@@ -23,12 +22,6 @@ typedef struct {
     uintptr_t stop;
     int value_type;
 } scan_settings;
-
-typedef struct {
-    uintptr_t address;
-    int value;
-    int len;
-} mem_int_scan_result;
 
 enum value_type val_type = BYTES_4;
 scan_settings sc_settings = {0x0, 0x7fffffffffff, BYTES_4};
@@ -82,22 +75,40 @@ void PrintProcessName(HANDLE hProcess) {
 }
 
 void scan_memory(HANDLE hProcess, unsigned long value, mem_int_scan_result *int_result) {
-    MEMORY_BASIC_INFORMATION mbi;
-    unsigned long tmp_value;
-    printf("Scanning....\n");
-    for (uintptr_t addr = sc_settings.start; addr <= sc_settings.stop; addr += mbi.RegionSize) {
-        if (VirtualQueryEx(hProcess, (LPCVOID) addr, &mbi, sizeof(mbi)) == 0)
-            printf(RED"VirtualQueryEx failed. Error: %d\n"DT, GetLastError());
-        for (uintptr_t tmp_addr = addr; tmp_addr <= (addr + mbi.RegionSize); tmp_addr += 4) {
-            ReadProcessMemory(hProcess, (LPCVOID) tmp_addr, &tmp_value, sizeof(int), NULL);
-            printf("Addr: [%llx]. Value: [%lu]\n", tmp_addr, tmp_value);
-            if (tmp_value == value) {
-                printf(GREEN"Found %d at %llx\n"DT, tmp_value, tmp_addr);
-                int_result[int_result->len].address = tmp_addr;
-                ++int_result->len;
-            }
-        }
-    }
+    threads_scan *t1 = malloc(sizeof(threads_scan)), *t2 = malloc(sizeof(threads_scan)),
+                 *t3 = malloc(sizeof(threads_scan)), *t4 = malloc(sizeof(threads_scan));
+
+    t1->hProcess = hProcess;
+    t1->value = value;
+
+    t2->hProcess = hProcess;
+    t2->value = value;
+
+    t3->hProcess = hProcess;
+    t3->value = value;
+
+    t4->hProcess = hProcess;
+    t4->value = value;
+
+    unsigned hThreadId1, hThreadId2, hThreadId3, hThreadId4;
+    HANDLE hThread1 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc1, t1, 0, &hThreadId1);
+    _errorcheckthread(hThread1);
+    HANDLE hThread2 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc2, t2, 0, &hThreadId2);
+    _errorcheckthread(hThread2);
+    HANDLE hThread3 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc3, t3, 0, &hThreadId3);
+    _errorcheckthread(hThread3);
+    HANDLE hThread4 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc4, t4, 0, &hThreadId4);
+    _errorcheckthread(hThread4);
+
+    WaitForSingleObject(hThread1, INFINITE);
+    WaitForSingleObject(hThread2, INFINITE);
+    WaitForSingleObject(hThread3, INFINITE);
+    WaitForSingleObject(hThread4, INFINITE);
+
+    CloseHandle(hThread1);
+    CloseHandle(hThread2);
+    CloseHandle(hThread3);
+    CloseHandle(hThread4);
 }
 
 void init(mem_int_scan_result *result1) {
@@ -149,15 +160,19 @@ void parse_commands(char buffer[1024], HANDLE hProcess, mem_int_scan_result *int
         unsigned long value = strtoul(tokens[1], NULL, 10);
         scan_memory(hProcess, value, int_result);
 
-        if (int_result->len == 0)
+        /*if (int_result->len == 0)
             printf(RED"No addresses with the value %lu found\n"DT, value);
-        else
-            printf(GREEN"Found %d with the value %lu\n"DT, int_result->len, value);
+        else {
+            printf(GREEN"Found %d addresses with the value %lu\n"DT, int_result->len, value);
             printf(BLUE"Address      | Value\n"DT);
             printf(BLUE"----------------------\n"DT);
-            for (int i = 0; i < int_result->len; ++i)
+            for (int i = 0; i < int_result->len; ++i) {
+                if (int_result[i].address == 0)
+                    continue;
                 printf(BLUE"| %llx |  %d\n"DT, int_result[i].address, value);
+            }
             printf(BLUE"----------------------\n"DT);
+        }*/
     }
     else if (strcmp(tokens[0], "scan_settings") == 0)
         print_scan_settings();
@@ -183,7 +198,7 @@ int main(int argc, char **argv) {
     }
  
     printf(GREEN" ----------------------------\n"DT);  
-    printf(GREEN"| MEMORY EDITOR v1.0         |\n"DT);  
+    printf(GREEN"| MEMORY EDITOR v1.1         |\n"DT);  
     printf(GREEN" ----------------------------\n"DT); 
 
     DWORD PID = _findProcessPidByName(argv[1]);
