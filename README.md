@@ -9,7 +9,7 @@
 - **Error handling** with detailed WinAPI error codes
 - **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`. Also there is multi threading
 
-## Compiling
+## Compiling 🔧
 ```bash
 > cd MT
 > gcc -c func.c -o func.o
