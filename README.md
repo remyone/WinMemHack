@@ -9,7 +9,15 @@
 - **Error handling** with detailed WinAPI error codes
 - **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`. Also there is multi threading
 
+## Compiling
+```bash
+> cd MT
+> gcc -c func.c -o func.o
+> ar -rcs libMTlib.a func.o
+> cd ..
+> gcc main.c -L YourPathTo\MemoryEditorUtility\MT -lMTlib -I YourPathTo\MemoryEditorUtility\MT -o MEU.exe
+```
 ## Usage 🚀
 ```bash
-./MEU.exe ProcessName.exe
+> ./MEU.exe ProcessName.exe
 ```
