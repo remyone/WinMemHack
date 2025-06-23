@@ -15,7 +15,7 @@
 > gcc -c func.c -o func.o
 > ar -rcs libMTlib.a func.o
 > cd ..
-> gcc main.c -L YourPathTo\MemoryEditorUtility\MT -lMTlib -I YourPathTo\MemoryEditorUtility\MT -o MEU.exe
+> gcc main.c -L YourPathTo\WinMemHack\MT -lMTlib -I YourPathTo\WinMemHack\MT -o MEU.exe
 ```
 ## Usage 🚀
 ```bash
