@@ -2,6 +2,7 @@
 #include <winnt.h>
 #include <stdio.h>
 #include <process.h>
+#include <stdint.h>
 
 typedef struct {
     uintptr_t address;
@@ -12,7 +13,7 @@ typedef struct {
 typedef struct {
     HANDLE hProcess;
     //MEMORY_BASIC_INFORMATION mbi;
-    //mem_int_scan_result *misr;
+    mem_int_scan_result *misr;
     unsigned long value;
 } threads_scan;
 
