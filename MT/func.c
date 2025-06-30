@@ -4,6 +4,8 @@
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
 #define THREAD_CREATE_ERROR -25
+#define INT_OFFSET 4
+#define MAX_BLOCK_SIZE 65536
 
 int _errorcheckthread(HANDLE hThread) {
     if (hThread == NULL) {
@@ -14,135 +16,80 @@ int _errorcheckthread(HANDLE hThread) {
     return 0;
 }
 
-
-unsigned __stdcall ThreadFunc1(LPVOID arg) {
-    threads_scan *ts = (threads_scan *) arg;
-    MEMORY_BASIC_INFORMATION mbi;
-    unsigned long tmp_value;
-    uintptr_t last_addr;
-
-    for (uintptr_t addr = 0x0; addr <= 0x1ffffffffff; addr += mbi.RegionSize) {
-        if (VirtualQueryEx(ts->hProcess, (LPCVOID) addr, &mbi, sizeof(MEMORY_BASIC_INFORMATION)) == 0) {
-            printf(RED"VirtualQueryEx failed. Error: %d\n"DT, GetLastError());
-            addr += 0x1000;
-            continue;
-        }
-
-        if (mbi.RegionSize == 0)   
-            break;
-
-        if (mbi.State != MEM_RESERVE && mbi.Protect != PAGE_NOACCESS) {
-            for (uintptr_t tmp_addr = addr; tmp_addr < (addr + mbi.RegionSize); tmp_addr += sizeof(unsigned long)) {
-                if (ReadProcessMemory(ts->hProcess, (LPCVOID) tmp_addr, &tmp_value, sizeof(unsigned long), NULL) == 0)
-                    continue;
-                if (tmp_value == ts->value) {
-                    last_addr = tmp_addr;
-                    if (tmp_addr != last_addr) {
-                        printf(GREEN"Found %d at %llx\n"DT, ts->value, tmp_addr);
-                        /*ts->misr[ts->misr->len].address = tmp_addr;
-                        ts->misr->len++;*/
-                    }
-                }
-            }
-        }
+void _reallocMemory(mem_int_scan_result **misr) {
+    if ((*misr)[0].len == (*misr)[0].capacity) {
+        (*misr)[0].capacity *= 2;
+        *misr = realloc(*misr, (*misr)[0].capacity * sizeof(mem_int_scan_result));
     }
 }
 
-unsigned __stdcall ThreadFunc2(LPVOID arg) {
-    threads_scan *ts = (threads_scan *) arg;
-    MEMORY_BASIC_INFORMATION mbi;
-    unsigned long tmp_value;
-    uintptr_t last_addr;
-
-    for (uintptr_t addr = 0x2000000000; addr <= 0x3ffffffffff; addr += mbi.RegionSize) {
-        if (VirtualQueryEx(ts->hProcess, (LPCVOID) addr, &mbi, sizeof(MEMORY_BASIC_INFORMATION)) == 0) {
-            printf(RED"VirtualQueryEx failed. Error: %d\n"DT, GetLastError());
-            addr += 0x1000;
-            continue;
-        }
-
-        if (mbi.RegionSize == 0)   
-            break;
-
-        if (mbi.State != MEM_RESERVE && mbi.Protect != PAGE_NOACCESS) {
-            for (uintptr_t tmp_addr = addr; tmp_addr < (addr + mbi.RegionSize); tmp_addr += sizeof(unsigned long)) {
-                if (ReadProcessMemory(ts->hProcess, (LPCVOID) tmp_addr, &tmp_value, sizeof(unsigned long), NULL) == 0)
-                    continue;
-                if (tmp_value == ts->value) {
-                    last_addr = tmp_addr;
-                    if (tmp_addr != last_addr) {
-                        printf(GREEN"Found %d at %llx\n"DT, ts->value, tmp_addr);
-                        /*ts->misr[ts->misr->len].address = tmp_addr;
-                        ts->misr->len++;*/
-                    }
-                }
-            }
-        }
+void fillMainMisr(mem_int_scan_result *misr, mem_int_scan_result **misr2) {
+    for (int i = 0; i < misr->len; ++i, (*misr2)[0].len++) {
+        _reallocMemory(misr2);
+        (*misr2)[(*misr2)[0].len].address = misr[i].address;
     }
 }
 
-unsigned __stdcall ThreadFunc3(LPVOID arg) {
-    threads_scan *ts = (threads_scan *) arg;
-    MEMORY_BASIC_INFORMATION mbi;
-    unsigned long tmp_value;
-    uintptr_t last_addr;
-
-    for (uintptr_t addr = 0x4000000000; addr <= 0x5ffffffffff; addr += mbi.RegionSize) {
-        if (VirtualQueryEx(ts->hProcess, (LPCVOID) addr, &mbi, sizeof(MEMORY_BASIC_INFORMATION)) == 0) {
-            printf(RED"VirtualQueryEx failed. Error: %d\n"DT, GetLastError());
-            addr += 0x1000;
-            continue;
-        }
-
-        if (mbi.RegionSize == 0)   
-            break;
-
-        if (mbi.State != MEM_RESERVE && mbi.Protect != PAGE_NOACCESS) {
-            for (uintptr_t tmp_addr = addr; tmp_addr < (addr + mbi.RegionSize); tmp_addr += sizeof(unsigned long)) {
-                if (ReadProcessMemory(ts->hProcess, (LPCVOID) tmp_addr, &tmp_value, sizeof(unsigned long), NULL) == 0)
-                    continue;
-                if (tmp_value == ts->value) {
-                    last_addr = tmp_addr;
-                    if (tmp_addr != last_addr) {
-                        printf(GREEN"Found %d at %llx\n"DT, ts->value, tmp_addr);
-                        /*ts->misr[ts->misr->len].address = tmp_addr;
-                        ts->misr->len++;*/
-                    }
-                }
-            }
-        }
-    }
+uint32_t extractValue(BYTE *bytes, int offset) {
+    return bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24);
 }
 
-unsigned __stdcall ThreadFunc4(LPVOID arg) {
+unsigned __stdcall ThreadFunc(LPVOID arg) {
     threads_scan *ts = (threads_scan *) arg;
     MEMORY_BASIC_INFORMATION mbi;
-    unsigned long tmp_value;
+
+    mem_int_scan_result *misr2 = ( mem_int_scan_result *) malloc(sizeof(mem_int_scan_result) * 100);
+    if (misr2 == NULL) {
+        printf(RED"Memory allocation failed\n"DT);
+        free(misr2);
+        return 1;
+    }
+    else {
+        misr2->len = 0;
+        misr2->capacity = 1000;
+    }
+
     uintptr_t last_addr;
 
-    for (uintptr_t addr = 0x6000000000; addr <= 0x7ffffffffff; addr += mbi.RegionSize) {
+    BYTE buffer[MAX_BLOCK_SIZE];
+    SIZE_T bytesRead;
+    uint32_t tmp_value;
+
+    for (uintptr_t addr = ts->start; addr <= ts->stop; addr += mbi.RegionSize) {
         if (VirtualQueryEx(ts->hProcess, (LPCVOID) addr, &mbi, sizeof(MEMORY_BASIC_INFORMATION)) == 0) {
-            printf(RED"VirtualQueryEx failed. Error: %d\n"DT, GetLastError());
-            addr += 0x1000;
-            continue;
+            if (GetLastError() != ERROR_SUCCESS) {
+                printf(RED"VirtualQueryEx failed. Error: %d\n"DT, GetLastError());
+                addr += 0x1000;
+                continue;
+            }
         }
 
-        if (mbi.RegionSize == 0)   
+        if (mbi.RegionSize == 0)
             break;
 
-        if (mbi.State != MEM_RESERVE && mbi.Protect != PAGE_NOACCESS) {
-            for (uintptr_t tmp_addr = addr; tmp_addr < (addr + mbi.RegionSize); tmp_addr += sizeof(unsigned long)) {
-                if (ReadProcessMemory(ts->hProcess, (LPCVOID) tmp_addr, &tmp_value, sizeof(unsigned long), NULL) == 0)
-                    continue;
-                if (tmp_value == ts->value) {
-                    if (tmp_addr != last_addr) {
-                        printf(GREEN"Found %d at %llx\n"DT, ts->value, tmp_addr);
-                        /*ts->misr[ts->misr->len].address = tmp_addr;
-                        ts->misr->len++;*/
+        if (mbi.State == MEM_COMMIT && (mbi.Protect & PAGE_READWRITE || 
+            mbi.Protect & PAGE_EXECUTE_READWRITE) && !(mbi.Protect & PAGE_GUARD)) {
+            for (uintptr_t tmp_addr = addr; tmp_addr < (addr + mbi.RegionSize); tmp_addr += MAX_BLOCK_SIZE) {
+                
+                SIZE_T toRead = (SIZE_T) min(MAX_BLOCK_SIZE, (addr + mbi.RegionSize) - tmp_addr);
+
+                if (ReadProcessMemory(ts->hProcess, (LPCVOID) tmp_addr, buffer, toRead, &bytesRead) && bytesRead == toRead) {
+                    for (int offset = 0; offset + sizeof(unsigned long) <= bytesRead; offset += INT_OFFSET) {
+                        tmp_value = extractValue(buffer, offset);
+                        if (tmp_value == ts->value) {
+                            _reallocMemory(&misr2);
+                            misr2[misr2->len].address = tmp_addr + offset;
+                            misr2[misr2->len].value = ts->value;
+                            misr2->len++;
+                        }
                     }
-                    last_addr = tmp_addr;
                 }
             }
         }
     }
+
+    if (misr2->len != 0)
+        fillMainMisr(misr2, &ts->misr);
+
+    return 0;
 }

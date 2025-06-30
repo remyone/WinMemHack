@@ -1,6 +1,7 @@
 #include "functions.h"
+#include "ms.h"
+
 #include <stdlib.h>
-#include <stdint.h>
 #include <psapi.h>
 #include <tlhelp32.h>
 #include <string.h>
@@ -25,6 +26,7 @@ typedef struct {
 
 enum value_type val_type = BYTES_4;
 scan_settings sc_settings = {0x0, 0x7fffffffffff, BYTES_4};
+bool isFirstScanUsed = 0;
 
 void print_scan_settings() {
     printf(BLUE"------------------------\n"DT);
@@ -74,51 +76,7 @@ void PrintProcessName(HANDLE hProcess) {
     }
 }
 
-void scan_memory(HANDLE hProcess, unsigned long value, mem_int_scan_result *int_result) {
-    threads_scan *t1 = malloc(sizeof(threads_scan)), *t2 = malloc(sizeof(threads_scan)),
-                 *t3 = malloc(sizeof(threads_scan)), *t4 = malloc(sizeof(threads_scan));
-
-    t1->hProcess = hProcess;
-    t1->value = value;
-
-    t2->hProcess = hProcess;
-    t2->value = value;
-
-    t3->hProcess = hProcess;
-    t3->value = value;
-
-    t4->hProcess = hProcess;
-    t4->value = value;
-
-    unsigned hThreadId1, hThreadId2, hThreadId3, hThreadId4;
-    HANDLE hThread1 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc1, t1, 0, &hThreadId1);
-    _errorcheckthread(hThread1);
-    HANDLE hThread2 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc2, t2, 0, &hThreadId2);
-    _errorcheckthread(hThread2);
-    HANDLE hThread3 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc3, t3, 0, &hThreadId3);
-    _errorcheckthread(hThread3);
-    HANDLE hThread4 = ( HANDLE ) _beginthreadex(NULL, 0, ThreadFunc4, t4, 0, &hThreadId4);
-    _errorcheckthread(hThread4);
-
-    WaitForSingleObject(hThread1, INFINITE);
-    WaitForSingleObject(hThread2, INFINITE);
-    WaitForSingleObject(hThread3, INFINITE);
-    WaitForSingleObject(hThread4, INFINITE);
-
-    CloseHandle(hThread1);
-    CloseHandle(hThread2);
-    CloseHandle(hThread3);
-    CloseHandle(hThread4);
-}
-
-void init(mem_int_scan_result *result1) {
-    result1 = calloc(100, sizeof(int) + sizeof(uintptr_t));
-    result1->len = 0;
-    if (result1 == NULL)
-        printf(RED"Init error: memory allocation 1 failed.\n"DT);
-}
-
-void parse_commands(char buffer[1024], HANDLE hProcess, mem_int_scan_result *int_result) {
+void parse_commands(char buffer[1024], HANDLE hProcess, mem_int_scan_result **int_result) {
     int i = 0;
     char *token; 
     char *tokens[25];
@@ -132,8 +90,11 @@ void parse_commands(char buffer[1024], HANDLE hProcess, mem_int_scan_result *int
         tokens[i] = token;
     }
 
-    if (strcmp(tokens[0], "exit") == 0)
+    if (strcmp(tokens[0], "exit") == 0) {
+        free(*int_result);
+        CloseHandle(hProcess);
         exit(0);
+    }
     else if (strcmp(tokens[0], "set") == 0) {
         if (i < 3)
             printf(RED"Usage: set address new_value\n"DT);
@@ -158,21 +119,18 @@ void parse_commands(char buffer[1024], HANDLE hProcess, mem_int_scan_result *int
         system("cls");
     else if (strcmp(tokens[0], "first_scan") == 0) {
         unsigned long value = strtoul(tokens[1], NULL, 10);
-        scan_memory(hProcess, value, int_result);
+        scan_memory(hProcess, value, int_result, &isFirstScanUsed);
+    } else if (strcmp(tokens[0], "new_scan") == 0) {
+        for (int i = 0; i < (*int_result)[0].len; ++i)
+            (*int_result)[i].address = 0;
 
-        /*if (int_result->len == 0)
-            printf(RED"No addresses with the value %lu found\n"DT, value);
-        else {
-            printf(GREEN"Found %d addresses with the value %lu\n"DT, int_result->len, value);
-            printf(BLUE"Address      | Value\n"DT);
-            printf(BLUE"----------------------\n"DT);
-            for (int i = 0; i < int_result->len; ++i) {
-                if (int_result[i].address == 0)
-                    continue;
-                printf(BLUE"| %llx |  %d\n"DT, int_result[i].address, value);
-            }
-            printf(BLUE"----------------------\n"DT);
-        }*/
+        (*int_result)[0].len = 0;
+        (*int_result)[0].capacity = 0;
+        isFirstScanUsed = 0;
+        free(*int_result);
+    } else if (strcmp(tokens[0], "next_scan") == 0) {
+        unsigned long new_value = strtoul(tokens[1], NULL, 10);
+        next_scan_memory(hProcess, new_value, int_result, &isFirstScanUsed);
     }
     else if (strcmp(tokens[0], "scan_settings") == 0)
         print_scan_settings();
@@ -198,12 +156,12 @@ int main(int argc, char **argv) {
     }
  
     printf(GREEN" ----------------------------\n"DT);  
-    printf(GREEN"| MEMORY EDITOR v1.1         |\n"DT);  
+    printf(GREEN"| MEMORY EDITOR v1.3         |\n"DT);  
     printf(GREEN" ----------------------------\n"DT); 
 
     DWORD PID = _findProcessPidByName(argv[1]);
 
-    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS,
+    HANDLE hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION,
                                   FALSE,
                                   PID);
 
@@ -213,10 +171,9 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    mem_int_scan_result int_result[100];
-    char buffer[1024];
+    mem_int_scan_result *int_result;
 
-    init(int_result);
+    char buffer[1024];
 
     PrintProcessName(hProcess);
 
@@ -226,10 +183,10 @@ int main(int argc, char **argv) {
         printf("> ");
         fgets(buffer, sizeof(buffer), stdin);
         buffer[strcspn(buffer, "\n")] = 0;
-        parse_commands(buffer, hProcess, int_result);
+        parse_commands(buffer, hProcess, &int_result);
     }
 
     CloseHandle(hProcess);
-    free(&int_result);
+    free(int_result);
     return 0;
 }

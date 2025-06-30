@@ -1,3 +1,6 @@
+#ifndef MY_FUNCTIONS_H
+#define MY_FUNCTIONS_H
+
 #include <Windows.h>
 #include <winnt.h>
 #include <stdio.h>
@@ -8,17 +11,19 @@ typedef struct {
     uintptr_t address;
     int value;
     int len;
+    int capacity;
 } mem_int_scan_result;
 
 typedef struct {
     HANDLE hProcess;
-    //MEMORY_BASIC_INFORMATION mbi;
     mem_int_scan_result *misr;
+    uintptr_t start, stop;
     unsigned long value;
 } threads_scan;
 
 extern int _errorcheckthread(HANDLE hThread);
-extern unsigned __stdcall ThreadFunc1(LPVOID arg);
-extern unsigned __stdcall ThreadFunc2(LPVOID arg);
-extern unsigned __stdcall ThreadFunc3(LPVOID arg);
-extern unsigned __stdcall ThreadFunc4(LPVOID arg);
+extern void _reallocMemory(mem_int_scan_result **misr);
+extern void fillMainMisr(mem_int_scan_result *misr, mem_int_scan_result **misr2);
+extern unsigned __stdcall ThreadFunc(LPVOID arg);
+
+#endif
