@@ -11,11 +11,11 @@
 
 ## Compiling 🔧
 ```bash
-> gcc -c MT\func.c -o MT\func.o
-> gcc -c MemoryScanner\main.c -I L:\MemoryEditorUtility\MT -o MemoryScanner\main.o
-> ar -rcs MT\libMTlib.a MT\func.o
-> ar -rcs MemoryScanner\libMSlib.a MemoryScanner\main.o
-> gcc main.c -L L:\MemoryEditorUtility\MT -L L:\MemoryEditorUtility\MemoryScanner -lMSlib -lMTlib -I L:\MemoryEditorUtility\MT -I L:\MemoryEditorUtility\MemoryScanner -o MEU.exe
+> gcc -c YourPathTo\MemoryEditorUtility\func.c -o MT\func.o
+> gcc -c YourPathTo\MemoryEditorUtilityMemoryScanner\main.c -I YourPathTo\MemoryEditorUtility\MT -o YourPathTo\MemoryEditorUtility\MemoryScanner\main.o
+> ar -rcs YourPathTo\MemoryEditorUtility\MT\libMTlib.a YourPathTo\MemoryEditorUtility\MT\func.o
+> ar -rcs YourPathTo\MemoryEditorUtility\MemoryScanner\libMSlib.a YourPathTo\MemoryEditorUtility\MemoryScanner\main.o
+> gcc main.c -L YourPathTo\MemoryEditorUtility\MT -L YourPathTo\MemoryEditorUtility\MemoryScanner -lMSlib -lMTlib -I YourPathTo\MemoryEditorUtility\MT -I YourPathTo\MemoryEditorUtility\MemoryScanner -o MEU.exe
 ```
 ## Usage 🚀
 ```bash
