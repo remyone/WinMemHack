@@ -6,16 +6,16 @@
 - **Direct memory patching** via `WriteProcessMemory`
 - **Process verification** with executable path display
 - **Colorized terminal output** for better visibility
-- **Error handling** with detailed WinAPI error codes
-- **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`. Also there is multi threading
+- **Error handling** with WinAPI error codes
+- **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`. **Also there is multi threading**
 
 ## Compiling 🔧
 ```bash
-> cd MT
-> gcc -c func.c -o func.o
-> ar -rcs libMTlib.a func.o
-> cd ..
-> gcc main.c -L YourPathTo\WinMemHack\MT -lMTlib -I YourPathTo\WinMemHack\MT -o MEU.exe
+> gcc -c MT\func.c -o MT\func.o
+> gcc -c MemoryScanner\main.c -I L:\MemoryEditorUtility\MT -o MemoryScanner\main.o
+> ar -rcs MT\libMTlib.a MT\func.o
+> ar -rcs MemoryScanner\libMSlib.a MemoryScanner\main.o
+> gcc main.c -L L:\MemoryEditorUtility\MT -L L:\MemoryEditorUtility\MemoryScanner -lMSlib -lMTlib -I L:\MemoryEditorUtility\MT -I L:\MemoryEditorUtility\MemoryScanner -o MEU.exe
 ```
 ## Usage 🚀
 ```bash
