@@ -45,6 +45,9 @@ void scan_memory(HANDLE hProcess, unsigned long value, mem_int_scan_result **int
     if (CloseHandle(hThread2) == 0)
         printf(RED"CloseHandle 2 failed. Error: %d\n"DT, GetLastError());
 
+    free(t1);
+    free(t2);
+
     if ((*int_result)[0].len == 0)
             printf(RED"No addresses with the value %lu found\n"DT, value);
      else {
