@@ -8,6 +8,14 @@
 - **Colorized terminal output** for better visibility
 - **Error handling** with WinAPI error codes
 - **Memory scanner** via `ReadProcessMemory` and `VirtualQueryEx`. **Also there is multi threading**
+- Console with different commands:
+  - exit
+  - set address new_value
+  - first_scan value
+  - next_scan value
+  - new_scan
+  - scan_settings
+  - clear
 
 ## Compiling 🔧
 ```bash
