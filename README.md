@@ -19,11 +19,16 @@
 
 ## Compiling 🔧
 ```bash
-> gcc -c YourPathTo\MemoryEditorUtility\func.c -o MT\func.o
-> gcc -c YourPathTo\MemoryEditorUtility\MemoryScanner\main.c -I YourPathTo\MemoryEditorUtility\MT -o YourPathTo\MemoryEditorUtility\MemoryScanner\main.o
-> ar -rcs YourPathTo\MemoryEditorUtility\MT\libMTlib.a YourPathTo\MemoryEditorUtility\MT\func.o
-> ar -rcs YourPathTo\MemoryEditorUtility\MemoryScanner\libMSlib.a YourPathTo\MemoryEditorUtility\MemoryScanner\main.o
-> gcc main.c -L YourPathTo\MemoryEditorUtility\MT -L YourPathTo\MemoryEditorUtility\MemoryScanner -lMSlib -lMTlib -I YourPathTo\MemoryEditorUtility\MT -I YourPathTo\MemoryEditorUtility\MemoryScanner -o MEU.exe
+> gcc -c YourPathTo\WinMemHack\func.c -o MT\func.o
+> gcc -c YourPathTo\WinMemHack\MemoryScanner\main.c -I YourPathTo\WinMemHack\MT -o YourPathTo\WinMemHack\MemoryScanner\main.o
+> ar -rcs YourPathTo\WinMemHack\MT\libMTlib.a YourPathTo\WinMemHack\MT\func.o
+> ar -rcs YourPathTo\WinMemHack\MemoryScanner\libMSlib.a YourPathTo\WinMemHack\MemoryScanner\main.o
+> gcc main.c -L YourPathTo\WinMemHack\MT -L YourPathTo\WinMemHack\MemoryScanner -lMSlib -lMTlib -I YourPathTo\WinMemHack\MT -I YourPathTo\WinMemHack\MemoryScanner -o MEU.exe
+```
+OR
+### Use auto compiling made by me on python by changing 'L:\' to your path to Memory Editor Utility. The file 'auto_compiling.py' has to be situated in the folder 'WinMemHack'! run the command:
+```bash
+> python3 auto_compiling.py
 ```
 ## Usage 🚀
 ```bash
