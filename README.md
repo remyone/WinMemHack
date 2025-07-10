@@ -25,7 +25,7 @@
 > ar -rcs YourPathTo\WinMemHack\MemoryScanner\libMSlib.a YourPathTo\WinMemHack\MemoryScanner\main.o
 > gcc main.c -L YourPathTo\WinMemHack\MT -L YourPathTo\WinMemHack\MemoryScanner -lMSlib -lMTlib -I YourPathTo\WinMemHack\MT -I YourPathTo\WinMemHack\MemoryScanner -o MEU.exe
 ```
-OR
+**OR**
 ### Use auto compiling made by me on python by changing 'L:\' to your path to Memory Editor Utility. The file 'auto_compiling.py' has to be situated in the folder 'WinMemHack'! run the command:
 ```bash
 > python3 auto_compiling.py
