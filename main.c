@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
     DWORD PID = _findProcessPidByName(argv[1]);
 
     if (PID == -1) {
-        printf(RED"Couldn't find the process'es PID\n"DT);
+        printf(RED"PID hasn't been found\n"DT);
         return 1;
     }
 
