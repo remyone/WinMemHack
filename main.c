@@ -161,6 +161,11 @@ int main(int argc, char **argv) {
 
     DWORD PID = _findProcessPidByName(argv[1]);
 
+    if (PID == -1) {
+        printf(RED"Couldn't find the process'es PID\n"DT);
+        return 1;
+    }
+
     HANDLE hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION,
                                   FALSE,
                                   PID);
@@ -168,7 +173,7 @@ int main(int argc, char **argv) {
 
     if (hProcess == NULL) {
         printf(RED"HANDLE ERROR %d\n"DT, GetLastError());
-        exit(1);
+        return 1;
     }
 
     mem_int_scan_result *int_result;
