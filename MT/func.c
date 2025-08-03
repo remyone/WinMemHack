@@ -46,10 +46,8 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
     }
     else {
         misr2->len = 0;
-        misr2->capacity = 1000;
+        misr2->capacity = 100;
     }
-
-    uintptr_t last_addr;
 
     BYTE buffer[MAX_BLOCK_SIZE];
     SIZE_T bytesRead;
@@ -70,9 +68,9 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
         if (mbi.State == MEM_COMMIT && (mbi.Protect & PAGE_READWRITE || 
             mbi.Protect & PAGE_EXECUTE_READWRITE) && !(mbi.Protect & PAGE_GUARD)) {
             for (uintptr_t tmp_addr = addr; tmp_addr < (addr + mbi.RegionSize); tmp_addr += MAX_BLOCK_SIZE) {
-                
+            //вычисляем кол-во байт для чтения, чтобы не выйти за пределы региона и не было ошибок с чтением
                 SIZE_T toRead = (SIZE_T) min(MAX_BLOCK_SIZE, (addr + mbi.RegionSize) - tmp_addr);
-
+            //проверяем, если кол-во байт для чтения и кол-во прочитанных байт совпадают
                 if (ReadProcessMemory(ts->hProcess, (LPCVOID) tmp_addr, buffer, toRead, &bytesRead) && bytesRead == toRead) {
                     for (int offset = 0; offset + sizeof(unsigned long) <= bytesRead; offset += INT_OFFSET) {
                         tmp_value = extractValue(buffer, offset);
@@ -91,5 +89,6 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
     if (misr2->len != 0)
         fillMainMisr(misr2, &ts->misr);
 
+    free(misr2);
     return 0;
 }
