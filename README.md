@@ -1,5 +1,5 @@
 # WinMemHack 🛠️  
-*A low-level Windows process memory manipulation tool*
+> A low-level Windows process memory manipulation tool
 
 ## Features ✨
 - **Process hunting** by name (case-insensitive)
