@@ -20,6 +20,8 @@
 ## Compiling 🔧
 Change 'L:\\' to your path to WinMemHack. The file 'auto_compiling.py' has to be situated in the folder 'WinMemHack'! Then run the command:
 ```bash
+> git clone https://github.com/remyone/WinMemHack.git
+> cd WinMemHack/
 > python3 auto_compiling.py
 ```
 ## Usage 🚀
