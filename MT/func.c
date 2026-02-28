@@ -3,31 +3,14 @@
 #define DT "\x1b[0m"
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
-#define THREAD_CREATE_ERROR -25
-#define INT_OFFSET 4
+
 #define MAX_BLOCK_SIZE 65536
+#define INT_OFFSET 4
 
-int _errorcheckthread(HANDLE hThread) {
-    if (hThread == NULL) {
-        printf(RED"Failed to create thread [ID : %ld]"DT, GetCurrentThreadId());
-        return THREAD_CREATE_ERROR;
-    }
-
-    return 0;
-}
-
-void _reallocMemory(mem_int_scan_result **misr) {
-    if ((*misr)[0].len == (*misr)[0].capacity) {
-        (*misr)[0].capacity *= 2;
-        *misr = realloc(*misr, (*misr)[0].capacity * sizeof(mem_int_scan_result));
-    }
-}
-
-void fillMainMisr(mem_int_scan_result *misr, mem_int_scan_result **misr2) {
-    for (int i = 0; i < misr->len; ++i, (*misr2)[0].len++) {
-        _reallocMemory(misr2);
-        (*misr2)[(*misr2)[0].len].address = misr[i].address;
-    }
+void _reallocMemory(mem_int_scan_result *misr) {
+    misr->data = realloc(misr->data, sizeof(AddrValueElement) * misr->capacity);
+    assert(misr->data);
+    misr->capacity *= 2;
 }
 
 uint32_t extractValue(BYTE *bytes, int offset) {
@@ -38,16 +21,8 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
     threads_scan *ts = (threads_scan *) arg;
     MEMORY_BASIC_INFORMATION mbi;
 
-    mem_int_scan_result *misr2 = ( mem_int_scan_result *) malloc(sizeof(mem_int_scan_result) * 100);
-    if (misr2 == NULL) {
-        printf(RED"Memory allocation failed\n"DT);
-        free(misr2);
-        return 1;
-    }
-    else {
-        misr2->len = 0;
-        misr2->capacity = 100;
-    }
+    mem_int_scan_result *misr2 = NULL;
+    init(&misr2);
 
     BYTE buffer[MAX_BLOCK_SIZE];
     SIZE_T bytesRead;
@@ -75,10 +50,15 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
                     for (int offset = 0; offset + sizeof(unsigned long) <= bytesRead; offset += INT_OFFSET) {
                         tmp_value = extractValue(buffer, offset);
                         if (tmp_value == ts->value) {
-                            _reallocMemory(&misr2);
-                            misr2[misr2->len].address = tmp_addr + offset;
-                            misr2[misr2->len].value = ts->value;
-                            misr2->len++;
+                            if (ts->misr->len > ts->misr->capacity) {
+                                printf("MT/func.h line 66 realloc\n");
+                                _reallocMemory(misr2);
+                            }
+                            /*misr2[misr2->len].address = tmp_addr + offset;
+                            misr2[misr2->len].value = ts->value;*/
+                            ts->misr->data[ts->misr->len].address = tmp_addr + offset;
+                            ts->misr->data[ts->misr->len].value = ts->value;
+                            ts->misr->len++;
                         }
                     }
                 }
@@ -86,9 +66,7 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
         }
     }
 
-    if (misr2->len != 0)
-        fillMainMisr(misr2, &ts->misr);
-
-    free(misr2);
+    destroy_misr(&misr2);
+    
     return 0;
 }

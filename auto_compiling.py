@@ -1,7 +1,12 @@
 import os
 
-os.system("gcc -c MT\\func.c -o MT\\func.o")
-os.system("gcc -c MemoryScanner\\main.c -I L:\\WinMemHack\\MT -o MemoryScanner\\main.o")
-os.system("ar -rcs MT\\libMTlib.a MT\\func.o")
-os.system("ar -rcs MemoryScanner\\libMSlib.a MemoryScanner\\main.o");
-os.system("gcc main.c -L L:\\WinMemHack\\MT -L L:\\WinMemHack\\MemoryScanner -lMSlib -lMTlib -I L:\\WinMemHack\\MT -I L:\\WinMemHack\\MemoryScanner -o MEU.exe");
+print("Stage #1")
+os.system("gcc -c MemoryScanner\\main.c -I MT -I . -o MemoryScanner\\main.o")
+print("Stage #2")
+os.system("gcc -c .\\MT\\func.c -I . -o .\\MT\\func.o ")
+print("Stage #3")
+os.system("ar -rcs .\\MemoryScanner\\libMSlib.a .\\MemoryScanner\\main.o ")
+print("Stage #4")
+os.system("ar -rcs .\\MT\\libMTlib.a .\\MT\\func.o ")
+print("Stage #5")
+os.system("gcc main.c -L MT\\ -L MemoryScanner\\ -lMSlib -lMTlib -I MT\\ -I MemoryScanner\\ -I . -o MEU.exe")
