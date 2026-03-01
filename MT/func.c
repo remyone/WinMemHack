@@ -21,9 +21,6 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
     threads_scan *ts = (threads_scan *) arg;
     MEMORY_BASIC_INFORMATION mbi;
 
-    mem_int_scan_result *misr2 = NULL;
-    init(&misr2);
-
     BYTE buffer[MAX_BLOCK_SIZE];
     SIZE_T bytesRead;
     uint32_t tmp_value;
@@ -52,10 +49,9 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
                         if (tmp_value == ts->value) {
                             if (ts->misr->len > ts->misr->capacity) {
                                 printf("MT/func.h line 66 realloc\n");
-                                _reallocMemory(misr2);
+                                _reallocMemory(ts->misr);
                             }
-                            /*misr2[misr2->len].address = tmp_addr + offset;
-                            misr2[misr2->len].value = ts->value;*/
+
                             ts->misr->data[ts->misr->len].address = tmp_addr + offset;
                             ts->misr->data[ts->misr->len].value = ts->value;
                             ts->misr->len++;
@@ -65,8 +61,6 @@ unsigned __stdcall ThreadFunc(LPVOID arg) {
             }
         }
     }
-
-    destroy_misr(&misr2);
     
     return 0;
 }

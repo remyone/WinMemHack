@@ -65,9 +65,6 @@ void scan_memory(HANDLE hProcess, unsigned long value, mem_int_scan_result **int
     if (CloseHandle(hThread2) == 0)
         printf(RED"CloseHandle 2 failed. Error: %d\n"DT, GetLastError());
 
-    free(t1);
-    free(t2);
-
     for (int i = 0; i < t1->misr->len; ++i) {
         if ((*int_result)->len > (*int_result)->capacity)
             _reallocMemory(*int_result);
@@ -98,6 +95,11 @@ void scan_memory(HANDLE hProcess, unsigned long value, mem_int_scan_result **int
         }
         printf(BLUE"----------------------\n"DT);
     }
+
+    destroy_misr(&(t1->misr));
+    destroy_misr(&(t2->misr));
+    free(t1);
+    free(t2);
 }
 
 void next_scan_memory(HANDLE hProcess, unsigned long value, mem_int_scan_result **int_result, bool *isFirstScanUsed) {
